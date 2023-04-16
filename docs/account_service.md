@@ -26,11 +26,7 @@ https://{host}/api/account/authorize
   }
 }
 ```
-
-##### Коды ошибок:
-
-1. 404 - Пользователя с такими данными не существует;
-2. 401 - Неправильный пароль для пользователя.
+  
 </details>
 
 <details><summary>GET user</summary>
@@ -53,8 +49,5 @@ https://{host}/api/account/
 }
 ```
 
-##### Коды ошибок:
-
-1. 401 - `access_token` не является валидным.
 </details>
 
