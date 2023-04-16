@@ -16,6 +16,18 @@ https://{host}/api/{api_version}/account/authorize
 }
 ```
 
+##### Пример использования:
+```
+curl -X 'POST' \
+  'https://{host}/api/{api_version}/account/authorize' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -H 'access_token: {user_access_token} \
+  -d '{
+    "login": "user login",
+    "password": "user password"
+  }'
+```
 ##### Реузльтат
 Возвращает JSON с access_token и данные пользователя.
 ```
@@ -33,7 +45,7 @@ https://{host}/api/{api_version}/account/authorize
 
 ##### URL: 
 ```
-https://{host}/api/{api_version}/account/
+https://{host}/api/{api_version}/account
 ```
 
 ##### Описание:
@@ -41,6 +53,15 @@ https://{host}/api/{api_version}/account/
 
 ##### Параметры:
 **В `Header` запроса нужно добавить `access_token` пользователя** 
+
+##### Пример использования:
+```
+curl -X 'GET' \
+  'https://{host}/api/{api_version}/account' \
+  -H 'accept: application/json' \
+  -H 'access_token: {user_access_token} 
+```
+  
 ##### Реузльтат
 Возвращает JSON с данными пользователя.
 ```
