@@ -2,7 +2,7 @@
 
 ##### URL: 
 ```
-https://{host}/api/account/authorize
+https://{host}/api/{api_version}/account/authorize
 ```
 
 ##### Описание:
@@ -33,7 +33,7 @@ https://{host}/api/account/authorize
 
 ##### URL: 
 ```
-https://{host}/api/account/
+https://{host}/api/{api_version}/account/
 ```
 
 ##### Описание:
