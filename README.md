@@ -20,14 +20,12 @@ https://www.dropbox.com/s/22ps1w1j5uou6rp/sber_corp_proto_v1.1.pdf?dl=0
 
 ![db](img/main_db.png)
 
-Было решено вынести обращения в отдельные сущности:
-- `card_appeals`: обращения по картам;
-- `transcation_appeals`: обращения по транзакциям;
-- `user_appeals`: обращения поступаемые от пользователя и не имеющие точной привязки к какому-то типу обращений.
+Было решено для сущности обращений реализовать мастер таблицу `requests` и 2 таблицы `transaction_reqests` и `card_requests` хранящих дополнительную связность для различных типов обращений:
+- по карте;
+- по транзакции.
+- общие (когда нельзя однозначно определить к какому из выше перечисленных типов можно отнести обращение, в данном случае никаких дополнительных связностей не нужно иметь, поэтому такие обращения могут спокойно храниться в мастер таблице).
 
-Считаю, что данная реализация осуществляет группировку обращений по типу, с сохранением особенностей обращения (связаности с картой или транзакций), при этом сохраняет нормализацию БД.
-
-Для таблиц `cards` и `transactions` было решено вынести тип валюты в отдельную таблицу, а все данные связанные с цифрами хранить в вещественных числах взамен реализации, где эти данные хранились бы как строковые литералы. Это позволит при расширении функционала, такого как добавление возможности совершать операции в приложении, избежать дополнительных изменений в структуре БД.
+Для таблиц `cards` и `transactions` было решено вынести тип валюты в отдельную таблицу, а все данные связанные с цифрами хранить в вещественных числах в отличии от реализации, где эти данные хранились бы как строковые литералы. Это позволит при расширении функционала, такого как добавление возможности совершать операции в приложении, избежать дополнительных изменений в структуре БД.
 
 Также в таблице `cards` есть поле `user_name` вместо ссылки на пользователя. Это было сделано, так как в реквизитах карты может быть различное написание ФИО владельца. (Личный кейс, у меня 2 карты с разным написанием имени Nikolai, Nikolay)
 
@@ -35,7 +33,13 @@ https://www.dropbox.com/s/22ps1w1j5uou6rp/sber_corp_proto_v1.1.pdf?dl=0
 ```
 Действуют ограничения на снятие наличных по корпоративным картам: 170 000 рублей в день или 5 000 000 рублей в месяц.
 ```
-Конечно лучшим вариантом было бы воспользоваться сервисом наподобие Firebase, но так как взаимодействие сервиса происходит посредством обновления данных в бд, считаю что предоставление возможности обновлять информацию в реальном времени более релевантно также через бд.
+Конечно лучшим вариантом было бы воспользоваться сервисом наподобие Firebase, но так как взаимодействие с сервисом извне происходит посредством обновления данных в бд, считаю что предоставление возможности обновлять информацию в реальном времени более релевантно также через бд.
+
+**Дополнительная индексация**
+Предлагаю: 
+- Для таблицы `cards` добавить индекс для поля `user_id`;
+- Для таблицы `transactions` добавить индекс для поля `card_id`;
+- Для таблицы `requests` добавить индекс для поля `user_id`;
 
 ### **БД для статистики**
 
@@ -425,11 +429,11 @@ curl -X 'GET' \
 }
 ```
 
-### **Appeals**
-#### **[GET] APPEALS**
+### **Requests**
+#### **[GET] REQUESTS**
 ##### **URL:** 
 ```
-https://{host}/api/{api_version}/users/{user_id}/appeals
+https://{host}/api/{api_version}/users/{user_id}/requests
 ```
 
 ##### **Описание:**
@@ -441,7 +445,7 @@ https://{host}/api/{api_version}/users/{user_id}/appeals
 ##### **Пример использования:**
 ```
 curl -X 'GET' \
-  'https://{host}/api/{api_version}/users/{user_id}/appeals' \
+  'https://{host}/api/{api_version}/users/{user_id}/requests' \
   -H 'accept: application/json' \
   -H 'access_token: {user_access_token} 
 ```
@@ -453,7 +457,7 @@ curl -X 'GET' \
   "status_code": int,
   "response":
   {
-    "user appeals":
+    "user requests":
     [ 
       {
         "id": int,
@@ -469,7 +473,7 @@ curl -X 'GET' \
         "status": string
       }
     ],
-    "card appeals":
+    "card requests":
     [
       {
         "id": int,
@@ -487,7 +491,7 @@ curl -X 'GET' \
         "status": string
       }
     ],
-    "transaction appeals":
+    "transaction requests":
     [
       {
         "id": int,
@@ -509,10 +513,10 @@ curl -X 'GET' \
 }
 ```
 
-#### **[POST] ADD USER APPEAL**
+#### **[POST] ADD USER REQUEST**
 ##### **URL:** 
 ```
-https://{host}/api/{api_version}/users/{user_id}/appeals
+https://{host}/api/{api_version}/users/{user_id}/requests
 ```
 
 ##### **Описание:**
@@ -529,7 +533,7 @@ https://{host}/api/{api_version}/users/{user_id}/appeals
 ##### **Пример использования:**
 ```
 curl -X 'POST' \
-  'https://{host}/api/{api_version}/users/{user_id}/appeals' \
+  'https://{host}/api/{api_version}/users/{user_id}/requests' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -H 'access_token: {user_access_token} \
@@ -553,10 +557,10 @@ curl -X 'POST' \
 }
 ```
 
-#### **[POST] ADD CARD APPEAL**
+#### **[POST] ADD CARD REQUEST**
 ##### **URL:** 
 ```
-https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/appeals
+https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/requests
 ```
 
 ##### **Описание:**
@@ -573,7 +577,7 @@ https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/appeals
 ##### **Пример использования:**
 ```
 curl -X 'POST' \
-  'https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/appeals' \
+  'https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/requests' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -H 'access_token: {user_access_token} \
@@ -598,10 +602,10 @@ curl -X 'POST' \
 }
 ```
 
-#### **[POST] ADD TRANSACTION APPEAL**
+#### **[POST] ADD TRANSACTION REQUEST**
 ##### **URL:** 
 ```
-https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/transactions/{transaction_id}/appeals
+https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/transactions/{transaction_id}/requests
 ```
 
 ##### **Описание:**
@@ -618,7 +622,7 @@ https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/transactions/{t
 ##### **Пример использования:**
 ```
 curl -X 'POST' \
-  'https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/transactions/{transaction_id}/appeals' \
+  'https://{host}/api/{api_version}/users/{user_id}/cards/{card_id}/transactions/{transaction_id}/requests' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -H 'access_token: {user_access_token} \
